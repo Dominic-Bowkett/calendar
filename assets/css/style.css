@@ -1,0 +1,42 @@
+/* Booking App Custom Styles */
+
+/* Service cards */
+.service-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.service-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.12) !important;
+}
+
+/* Time slot buttons */
+.slot-btn {
+    min-width: 90px;
+    transition: all 0.15s ease;
+}
+.slot-btn.selected {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    color: #fff;
+}
+
+/* Flatpickr overrides */
+.flatpickr-input {
+    background-color: #fff !important;
+    cursor: pointer;
+}
+
+/* Admin table small text */
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* Step card animation */
+#step-details {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
