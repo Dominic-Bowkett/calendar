@@ -19,5 +19,9 @@ define('APP_URL', 'http://localhost');
 define('APP_NAME', 'My Booking App');
 define('ADMIN_TIMEZONE', 'Europe/London');
 
+// Migration runner secret — set this to a long random string, then visit:
+// https://yourdomain.com/migrate.php?secret=YOUR_SECRET_HERE
+define('MIGRATE_SECRET', 'change-this-to-a-long-random-string');
+
 // Set default timezone
 date_default_timezone_set(ADMIN_TIMEZONE);
