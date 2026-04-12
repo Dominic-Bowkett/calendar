@@ -30,6 +30,11 @@ body { background: #f3f4f6; }
 /* ── Flatpickr — inline calendar fills the panel ─────────────────────────── */
 #datepicker { display: none; }
 
+/*
+ * Flatpickr hardcodes 307.875px on .flatpickr-days and .dayContainer,
+ * and caps each day cell at max-width:39px.
+ * We must override every level so the grid and the weekday headers align.
+ */
 .flatpickr-calendar.inline {
   box-shadow: none !important;
   border: none !important;
@@ -38,18 +43,28 @@ body { background: #f3f4f6; }
   width: 100% !important;
   max-width: 100%;
 }
-.flatpickr-calendar.inline .flatpickr-rContainer,
+/* rContainer is display:inline-block by default — switch to block so it expands */
+.flatpickr-calendar.inline .flatpickr-rContainer {
+  display: block;
+  width: 100%;
+}
 .flatpickr-calendar.inline .flatpickr-innerContainer {
   width: 100%;
 }
+/* Override the hardcoded 307.875px pixel widths */
 .flatpickr-calendar.inline .flatpickr-days {
-  width: 100%;
+  width: 100% !important;
 }
 .flatpickr-calendar.inline .dayContainer {
-  width: 100%;
-  min-width: 100%;
-  max-width: 100%;
-  justify-content: flex-start;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  justify-content: space-around;
+}
+/* Remove the 39px cap — let each day flex to exactly 1/7 of the container */
+.flatpickr-calendar.inline .flatpickr-day {
+  max-width: none;
+  flex-basis: 14.2857143%;
 }
 /* Selected day */
 .flatpickr-day.selected,
