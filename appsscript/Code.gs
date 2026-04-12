@@ -44,7 +44,19 @@ var CONFIG = {
       id:           'epc',
       name:         'EPC Assessment',
       duration:     60,
-      defaultPrice: 75.00,
+      defaultPrice: 75.00,   // fallback if bedroom count not selected
+      // Price (inc VAT) by number of bedrooms — edit freely.
+      // Keys must match the bedroom options in the booking form.
+      // Remove this property from a type to use a fixed defaultPrice only.
+      priceByBedrooms: {
+        'Studio': 65.00,
+        '1':      70.00,
+        '2':      75.00,
+        '3':      85.00,
+        '4':      95.00,
+        '5':     110.00,
+        '6+':    130.00,
+      },
       color:        '#1a73e8',
       calColor:     'BLUE',
       description:  'Energy Performance Certificate assessment',
@@ -222,7 +234,9 @@ function getPublicConfig() {
     workingHours:  CONFIG.workingHours,
     appointmentTypes: CONFIG.appointmentTypes.map(function(t) {
       return { id: t.id, name: t.name, duration: t.duration,
-               defaultPrice: t.defaultPrice, color: t.color, description: t.description };
+               defaultPrice: t.defaultPrice,
+               priceByBedrooms: t.priceByBedrooms || null,
+               color: t.color, description: t.description };
     }),
   };
 }

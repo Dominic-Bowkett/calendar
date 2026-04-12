@@ -157,10 +157,13 @@
               <input type="text" class="form-control" id="f-address" required maxlength="200" autocomplete="off" placeholder="Full address including postcode">
             </div>
             <div class="col-sm-6">
-              <label class="form-label small fw-semibold">Price (inc VAT) <span class="text-danger">*</span></label>
+              <label class="form-label small fw-semibold">
+                Price (inc VAT) <span class="text-danger">*</span>
+                <span class="fw-normal text-muted" id="price-auto-label"></span>
+              </label>
               <div class="input-group">
                 <span class="input-group-text">£</span>
-                <input type="number" class="form-control" id="f-price" required min="0" step="0.01">
+                <input type="number" class="form-control" id="f-price" required min="0" step="0.01" placeholder="0.00">
               </div>
               <div class="form-text" id="price-vat-hint"></div>
             </div>

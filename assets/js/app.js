@@ -21,10 +21,16 @@
     }
     loadConfig();
 
-    // VAT hint on price input
+    // VAT hint on price input (manual entry — clears auto label)
     document.getElementById('f-price').addEventListener('input', function () {
       var val = parseFloat(this.value);
-      updateVatHint(isNaN(val) ? 0 : val);
+      setPriceAutoLabel('');
+      updateVatHint(isNaN(val) ? 0 : val, null);
+    });
+
+    // Auto-fill price from bedroom count when type has priceByBedrooms
+    document.getElementById('f-bedrooms').addEventListener('change', function () {
+      onBedroomsChange(this.value);
     });
 
     // Booking form submit
@@ -187,14 +193,19 @@
     document.getElementById('det-datetime').textContent  =
       formatDate(state.selectedDate) + ' at ' + slot.label;
 
-    // Pre-fill price from type default
-    var priceEl = document.getElementById('f-price');
-    if (state.selectedType.defaultPrice > 0) {
-      priceEl.value = state.selectedType.defaultPrice.toFixed(2);
-      updateVatHint(state.selectedType.defaultPrice);
+    // Pre-fill price: use bedroom-based price if already selected, else default
+    var currentBedrooms = document.getElementById('f-bedrooms').value;
+    var type = state.selectedType;
+    if (type.priceByBedrooms && currentBedrooms && type.priceByBedrooms[currentBedrooms] !== undefined) {
+      var bPrice = type.priceByBedrooms[currentBedrooms];
+      document.getElementById('f-price').value = bPrice.toFixed(2);
+      updateVatHint(bPrice, currentBedrooms);
+    } else if (type.defaultPrice > 0) {
+      document.getElementById('f-price').value = type.defaultPrice.toFixed(2);
+      updateVatHint(type.defaultPrice, null);
     } else {
-      priceEl.value = '';
-      document.getElementById('price-vat-hint').textContent = '';
+      document.getElementById('f-price').value = '';
+      updateVatHint(0, null);
     }
 
     setTimeout(function () { goTo('details'); }, 180);
@@ -209,14 +220,49 @@
   }
 
   // ── Step 3: Client details ────────────────────────────────────────────────
-  function updateVatHint(priceIncVAT) {
+
+  // Auto-fill price when bedrooms changes (if the type has a priceByBedrooms map)
+  function onBedroomsChange(bedrooms) {
+    var type = state.selectedType;
+    if (!type || !type.priceByBedrooms) return;
+
+    var priceEl = document.getElementById('f-price');
+    if (bedrooms && type.priceByBedrooms[bedrooms] !== undefined) {
+      var price = type.priceByBedrooms[bedrooms];
+      priceEl.value = price.toFixed(2);
+      setPriceAutoLabel('auto');
+      updateVatHint(price, bedrooms);
+    } else {
+      // No bedroom selected — revert to type default
+      setPriceAutoLabel('');
+      if (type.defaultPrice > 0) {
+        priceEl.value = type.defaultPrice.toFixed(2);
+        updateVatHint(type.defaultPrice, null);
+      } else {
+        priceEl.value = '';
+        updateVatHint(0, null);
+      }
+    }
+  }
+
+  // Shows/clears the "(auto)" badge next to the price label
+  function setPriceAutoLabel(state) {
+    var el = document.getElementById('price-auto-label');
+    if (!el) return;
+    el.textContent = state === 'auto' ? '(auto — edit to override)' : '';
+  }
+
+  // vatHint: shows VAT breakdown + optional bedroom context prefix
+  // bedroomsLabel: string like "3" shown in hint, or null for plain mode
+  function updateVatHint(priceIncVAT, bedroomsLabel) {
     var vatRate = (state.config && state.config.vatRate) || 20;
     var hint = document.getElementById('price-vat-hint');
     if (priceIncVAT > 0) {
       var priceExVAT = priceIncVAT / (1 + vatRate / 100);
       var vatAmount  = priceIncVAT - priceExVAT;
+      var prefix = bedroomsLabel ? bedroomsLabel + ' bed  ·  ' : '';
       hint.textContent =
-        'Ex VAT: £' + priceExVAT.toFixed(2) + '  ·  VAT (' + vatRate + '%): £' + vatAmount.toFixed(2);
+        prefix + 'Ex VAT: £' + priceExVAT.toFixed(2) + '  ·  VAT (' + vatRate + '%): £' + vatAmount.toFixed(2);
     } else {
       hint.textContent = '';
     }
@@ -326,6 +372,7 @@
     goTo('success');
     document.getElementById('details-form').reset();
     document.getElementById('price-vat-hint').textContent = '';
+    setPriceAutoLabel('');
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -357,6 +404,7 @@
     resetSlots();
     document.getElementById('details-form').reset();
     document.getElementById('price-vat-hint').textContent = '';
+    setPriceAutoLabel('');
     hide('details-error');
     goTo('type');
   }
