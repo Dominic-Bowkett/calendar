@@ -107,3 +107,14 @@ body { background: #f3f4f6; }
 
 /* ── Success icon ─────────────────────────────────────────────────────────── */
 .success-icon { font-size: 4rem; }
+
+/* ── Google Places Autocomplete dropdown ──────────────────────────────────── */
+.pac-container {
+  z-index: 2000;            /* sit above Bootstrap cards / modals */
+  border-radius: 6px;
+  box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12);
+  border: 1px solid #dee2e6;
+  font-family: inherit;
+}
+.pac-item { padding: .35rem .6rem; cursor: pointer; }
+.pac-item:hover { background: #e8f0fe; }
