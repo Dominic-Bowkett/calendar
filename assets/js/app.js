@@ -9,7 +9,14 @@
     selectedTime:  '',    // 'HH:MM'
     selectedLabel: '',    // '10:00 AM'
     picker:        null,  // Flatpickr instance
+    slotCache:     {},    // key: 'typeId|YYYY-MM-DD' → array | Promise | null
+    addressManual: false, // address input mode (false = autocomplete, true = manual textarea)
+    placesReady:   false, // Google Maps Places library loaded
+    placesAutocomplete: null,
   };
+
+  // Number of working days to preload slots for once a type is selected
+  var PRELOAD_DAYS = 14;
 
   // ── Init ───────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
@@ -33,12 +40,32 @@
       onBedroomsChange(this.value);
     });
 
+    // Address: toggle between Google Places autocomplete and manual textarea
+    var toggleLink = document.getElementById('toggle-address-manual');
+    if (toggleLink) {
+      toggleLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        toggleAddressManual();
+      });
+    }
+
+    // If the Maps script has already finished loading by the time we get here,
+    // initGooglePlaces() will have set state.placesReady — initialise now.
+    initAddressAutocomplete();
+
     // Booking form submit
     document.getElementById('details-form').addEventListener('submit', function (e) {
       e.preventDefault();
       submitBooking();
     });
   });
+
+  // Global callback fired by the Google Maps JS API once the Places library
+  // is loaded. Defined on window so the async script tag can find it.
+  window.initGooglePlaces = function () {
+    state.placesReady = true;
+    initAddressAutocomplete();
+  };
 
   // ── Config ────────────────────────────────────────────────────────────────
   function loadConfig() {
@@ -103,6 +130,9 @@
 
     initDatePicker();
     resetSlots();
+    // Kick off background prefetch of the next 14 working days so clicking
+    // a date renders slots instantly instead of waiting for a round-trip.
+    preloadSlots(type);
     goTo('datetime');
   }
 
@@ -138,31 +168,125 @@
     hide('slots-placeholder');
     show('slots-content');
     document.getElementById('slots-date-heading').textContent = formatDate(dateStr);
-    show('slots-spinner');
     hide('slots-empty');
     document.getElementById('slots-list').innerHTML = '';
+
+    // Only show the spinner if we don't already have a resolved cached result.
+    var cached = state.slotCache[state.selectedType.id + '|' + dateStr];
+    if (cached && typeof cached.then !== 'function') {
+      hide('slots-spinner');
+    } else {
+      show('slots-spinner');
+    }
     loadSlots(dateStr);
   }
 
   function loadSlots(date) {
-    fetch(
-      APPS_SCRIPT_URL +
-      '?action=slots&typeId=' + encodeURIComponent(state.selectedType.id) +
-      '&date=' + encodeURIComponent(date)
-    )
-      .then(function (r) { return r.json(); })
+    var typeId = state.selectedType.id;
+    var key    = typeId + '|' + date;
+    var cached = state.slotCache[key];
+
+    // Cache hit (already-resolved array): render synchronously, no spinner.
+    if (cached && typeof cached.then !== 'function') {
+      handleSlotsResponse(cached, date);
+      return;
+    }
+
+    // Cache hit (in-flight Promise from preload): wait for it.
+    if (cached && typeof cached.then === 'function') {
+      cached.then(function (data) {
+        if (state.selectedDate === date) handleSlotsResponse(data, date);
+      }).catch(function () {
+        if (state.selectedDate === date) handleSlotsResponse(null, date);
+      });
+      return;
+    }
+
+    // Cache miss — fetch on demand and cache the result.
+    var p = fetchSlotsRaw(typeId, date)
       .then(function (data) {
-        hide('slots-spinner');
-        if (data.error || !Array.isArray(data) || data.length === 0) {
-          show('slots-empty');
-          return;
-        }
-        renderSlots(data);
+        state.slotCache[key] = data;
+        return data;
       })
       .catch(function () {
-        hide('slots-spinner');
-        show('slots-empty');
+        state.slotCache[key] = null;
+        return null;
       });
+    state.slotCache[key] = p;
+    p.then(function (data) {
+      if (state.selectedDate === date) handleSlotsResponse(data, date);
+    });
+  }
+
+  function handleSlotsResponse(data, date) {
+    hide('slots-spinner');
+    if (!data || data.error || !Array.isArray(data) || data.length === 0) {
+      show('slots-empty');
+      return;
+    }
+    renderSlots(data);
+  }
+
+  function fetchSlotsRaw(typeId, date) {
+    return fetch(
+      APPS_SCRIPT_URL +
+      '?action=slots&typeId=' + encodeURIComponent(typeId) +
+      '&date=' + encodeURIComponent(date)
+    ).then(function (r) { return r.json(); });
+  }
+
+  // Preload slot data for the next PRELOAD_DAYS *working* days into state.slotCache.
+  // Runs in the background with a small concurrency limit so we don't hammer
+  // the Apps Script endpoint.
+  function preloadSlots(type) {
+    state.slotCache = {};
+    if (!state.config || !state.config.workingHours) return;
+
+    var wh = state.config.workingHours;
+    var dates = [];
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    // Walk forward up to ~60 days looking for PRELOAD_DAYS working days.
+    var maxLookahead = 60;
+    while (dates.length < PRELOAD_DAYS && maxLookahead-- > 0) {
+      if (wh[d.getDay()]) dates.push(formatDateKey(d));
+      d.setDate(d.getDate() + 1);
+    }
+
+    var typeId = type.id;
+    var idx = 0;
+    var concurrency = 4;
+
+    function startNext() {
+      if (idx >= dates.length) return;
+      var dateStr = dates[idx++];
+      var key = typeId + '|' + dateStr;
+      var p = fetchSlotsRaw(typeId, dateStr)
+        .then(function (data) {
+          // Only keep cached entries for the type that's still selected
+          if (state.selectedType && state.selectedType.id === typeId) {
+            state.slotCache[key] = data;
+          }
+          return data;
+        })
+        .catch(function () {
+          if (state.selectedType && state.selectedType.id === typeId) {
+            state.slotCache[key] = null;
+          }
+          return null;
+        });
+      // Store the in-flight promise so loadSlots() can await it on a click.
+      state.slotCache[key] = p;
+      p.then(startNext, startNext);
+    }
+
+    for (var i = 0; i < concurrency && i < dates.length; i++) startNext();
+  }
+
+  function formatDateKey(d) {
+    var m = d.getMonth() + 1;
+    var dd = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
   }
 
   function renderSlots(slots) {
@@ -221,6 +345,68 @@
 
   // ── Step 3: Client details ────────────────────────────────────────────────
 
+  // Initialise the Google Places autocomplete on the address input.
+  // Safe to call multiple times — only attaches once and only after both
+  // the DOM and the Maps Places library are ready.
+  function initAddressAutocomplete() {
+    if (state.placesAutocomplete) return;
+    if (!state.placesReady) return;
+    if (!window.google || !window.google.maps || !window.google.maps.places) return;
+
+    var input = document.getElementById('f-address');
+    if (!input) return;
+
+    state.placesAutocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'gb' },
+      fields: ['formatted_address', 'address_components'],
+      types:  ['address'],
+    });
+    state.placesAutocomplete.addListener('place_changed', function () {
+      var place = state.placesAutocomplete.getPlace();
+      if (place && place.formatted_address) {
+        input.value = place.formatted_address;
+      }
+    });
+
+    // Stop the browser autofill / Enter-key from submitting the form while
+    // the user is interacting with the suggestion dropdown.
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        var dropdown = document.querySelector('.pac-container');
+        if (dropdown && dropdown.offsetParent !== null) e.preventDefault();
+      }
+    });
+  }
+
+  // Toggle between Google Places autocomplete (single-line input) and a
+  // free-form textarea for manual address entry.
+  function toggleAddressManual() {
+    var input    = document.getElementById('f-address');
+    var textarea = document.getElementById('f-address-manual');
+    var link     = document.getElementById('toggle-address-manual');
+    var hint     = document.getElementById('address-hint');
+    if (!input || !textarea || !link) return;
+
+    if (state.addressManual) {
+      // Manual → autocomplete
+      input.value = textarea.value;
+      hide('f-address-manual');
+      show('f-address');
+      link.textContent = 'Enter manually';
+      if (hint) hint.textContent = 'Start typing to search UK addresses';
+      state.addressManual = false;
+    } else {
+      // Autocomplete → manual
+      textarea.value = input.value;
+      hide('f-address');
+      show('f-address-manual');
+      link.textContent = 'Use address search';
+      if (hint) hint.textContent = 'Type the full address including postcode';
+      state.addressManual = true;
+      textarea.focus();
+    }
+  }
+
   // Auto-fill price when bedrooms changes (if the type has a priceByBedrooms map)
   function onBedroomsChange(bedrooms) {
     var type = state.selectedType;
@@ -276,7 +462,9 @@
     var nameVal    = document.getElementById('f-name').value.trim();
     var emailVal   = document.getElementById('f-email').value.trim();
     var phoneVal   = document.getElementById('f-phone').value.trim();
-    var addressVal = document.getElementById('f-address').value.trim();
+    var addressVal = (state.addressManual
+      ? document.getElementById('f-address-manual').value
+      : document.getElementById('f-address').value).trim();
     var priceVal   = document.getElementById('f-price').value.trim();
     var bedroomsVal = document.getElementById('f-bedrooms').value;
     var notesVal   = document.getElementById('f-notes').value.trim();
@@ -396,6 +584,7 @@
     state.selectedDate  = '';
     state.selectedTime  = '';
     state.selectedLabel = '';
+    state.slotCache     = {};
     if (state.picker) {
       state.picker.clear();
       state.picker.destroy();
@@ -403,6 +592,9 @@
     }
     resetSlots();
     document.getElementById('details-form').reset();
+    var manualTa = document.getElementById('f-address-manual');
+    if (manualTa) manualTa.value = '';
+    if (state.addressManual) toggleAddressManual();
     document.getElementById('price-vat-hint').textContent = '';
     setPriceAutoLabel('');
     hide('details-error');

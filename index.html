@@ -154,7 +154,12 @@
             </div>
             <div class="col-12">
               <label class="form-label small fw-semibold">Property Address <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="f-address" required maxlength="200" autocomplete="off" placeholder="Full address including postcode">
+              <input type="text" class="form-control" id="f-address" maxlength="200" autocomplete="off" placeholder="Start typing your address…">
+              <textarea class="form-control d-none" id="f-address-manual" rows="3" maxlength="300" placeholder="Enter your full address including postcode"></textarea>
+              <div class="form-text d-flex justify-content-between align-items-center">
+                <span id="address-hint" class="text-muted">Start typing to search UK addresses</span>
+                <a href="#" id="toggle-address-manual" class="text-decoration-none small">Enter manually</a>
+              </div>
             </div>
             <div class="col-sm-6">
               <label class="form-label small fw-semibold">
@@ -224,5 +229,8 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
+<!-- Google Maps Places — UK address autocomplete (loaded async; calls window.initGooglePlaces when ready) -->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuIk2AmyAwvnt4Q8Y31qIFIasGVV9UnVA&libraries=places&loading=async&callback=initGooglePlaces"></script>
 </body>
 </html>
