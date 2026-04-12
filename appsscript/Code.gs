@@ -418,7 +418,94 @@ function sendConfirmationEmail(data, type, startDt, ref, priceIncVAT) {
   });
 
   var fromEmail = CONFIG.ownerEmail || Session.getActiveUser().getEmail();
-  MailApp.sendEmail({ to: data.clientEmail, subject: subject, htmlBody: body, replyTo: fromEmail });
+
+  // Build an .ics calendar invite the customer can add to their own calendar.
+  // Most mail clients (Gmail, Outlook, Apple Mail) recognise this and show
+  // an inline "Add to calendar" / RSVP card.
+  var endDt   = new Date(startDt.getTime() + type.duration * 60000);
+  var ics     = buildIcsInvite(data, type, startDt, endDt, ref, fromEmail);
+  var icsBlob = Utilities.newBlob(ics, 'text/calendar; method=REQUEST; charset=UTF-8', 'invite.ics');
+
+  MailApp.sendEmail({
+    to:          data.clientEmail,
+    subject:     subject,
+    htmlBody:    body,
+    replyTo:     fromEmail,
+    attachments: [icsBlob],
+  });
+}
+
+// ── ICS calendar invite builder (RFC 5545) ───────────────────────────────────
+// Produces a VCALENDAR/VEVENT string the customer can add to their own
+// calendar straight from the confirmation email.
+
+function buildIcsInvite(data, type, startDt, endDt, ref, organizerEmail) {
+  function fmtUtc(d) {
+    return Utilities.formatDate(d, 'UTC', "yyyyMMdd'T'HHmmss'Z'");
+  }
+  // Escape text values per RFC 5545 section 3.3.11
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g,  '\\;')
+      .replace(/,/g,  '\\,')
+      .replace(/\r\n|\r|\n/g, '\\n');
+  }
+  // Quote a parameter value (CN=, etc.) and strip embedded double-quotes
+  function paramEsc(s) {
+    return '"' + String(s == null ? '' : s).replace(/"/g, "'") + '"';
+  }
+  // Fold any line longer than 73 octets per RFC 5545 section 3.1
+  function fold(line) {
+    if (line.length <= 73) return line;
+    var out = '';
+    while (line.length > 73) {
+      out += line.substring(0, 73) + '\r\n ';
+      line = line.substring(73);
+    }
+    return out + line;
+  }
+
+  var ownerName = CONFIG.ownerName || 'Booking';
+  var domain    = (organizerEmail && organizerEmail.split('@')[1]) || 'booking.local';
+  var uid       = ref + '@' + domain;
+
+  // Multi-line description shown when the customer opens the event in
+  // their calendar. \n is escaped by esc() into the literal sequence
+  // \\n which calendar clients render as a line break.
+  var descLines = [type.name, 'Reference: ' + ref];
+  if (data.clientAddress) descLines.push('Address: ' + data.clientAddress);
+  if (data.clientPhone)   descLines.push('Phone: '   + data.clientPhone);
+  if (data.notes)         descLines.push('', 'Notes: ' + data.notes);
+  descLines.push('', 'If you need to reschedule, please contact ' + ownerName + '.');
+  var description = descLines.join('\n');
+
+  var lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//' + ownerName + '//Booking App//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    'UID:' + uid,
+    'DTSTAMP:'  + fmtUtc(new Date()),
+    'DTSTART:'  + fmtUtc(startDt),
+    'DTEND:'    + fmtUtc(endDt),
+    'SUMMARY:'  + esc(type.name),
+    'DESCRIPTION:' + esc(description),
+    'LOCATION:' + esc(data.clientAddress || ''),
+    'ORGANIZER;CN=' + paramEsc(ownerName) + ':mailto:' + organizerEmail,
+    'ATTENDEE;CN=' + paramEsc(data.clientName)
+      + ';ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE'
+      + ':mailto:' + data.clientEmail,
+    'STATUS:CONFIRMED',
+    'SEQUENCE:0',
+    'TRANSP:OPAQUE',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ];
+
+  return lines.map(fold).join('\r\n');
 }
 
 // ── One-time setup: programmatically create the daily reminder trigger ────────
