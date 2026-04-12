@@ -10,6 +10,7 @@
     selectedLabel: '',    // '10:00 AM'
     picker:        null,  // Flatpickr instance
     slotCache:     {},    // key: 'typeId|YYYY-MM-DD' → array | Promise | null
+    unavailableDates: {}, // 'YYYY-MM-DD' → true once preload confirms 0 slots
     addressManual: false, // address input mode (false = autocomplete, true = manual textarea)
     placesReady:   false, // Google Maps Places library loaded
     placesAutocomplete: null,
@@ -153,7 +154,13 @@
       inline: true,
       minDate: 'today',
       maxDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-      disable: [function (date) { return disabledDays.indexOf(date.getDay()) > -1; }],
+      disable: [function (date) {
+        // Closed working day for this business
+        if (disabledDays.indexOf(date.getDay()) > -1) return true;
+        // Preload has confirmed 0 slots for this date — grey it out
+        if (state.unavailableDates[formatDateKey(date)]) return true;
+        return false;
+      }],
       disableMobile: false,
       onChange: function (dates, dateStr) {
         state.selectedDate  = dateStr;
@@ -237,9 +244,12 @@
 
   // Preload slot data for the next PRELOAD_DAYS *working* days into state.slotCache.
   // Runs in the background with a small concurrency limit so we don't hammer
-  // the Apps Script endpoint.
+  // the Apps Script endpoint. As each result lands, dates with no available
+  // slots are added to state.unavailableDates and the calendar is redrawn so
+  // the user can't pick a sold-out day.
   function preloadSlots(type) {
     state.slotCache = {};
+    state.unavailableDates = {};
     if (!state.config || !state.config.workingHours) return;
 
     var wh = state.config.workingHours;
@@ -266,6 +276,16 @@
           // Only keep cached entries for the type that's still selected
           if (state.selectedType && state.selectedType.id === typeId) {
             state.slotCache[key] = data;
+            // Mark dates with a definitive empty response as unavailable so
+            // the calendar greys them out. Network errors / data.error are
+            // left enabled so a transient backend hiccup doesn't lock the
+            // user out — they'll hit the existing "no slots" branch instead.
+            if (Array.isArray(data) && data.length === 0) {
+              state.unavailableDates[dateStr] = true;
+              if (state.picker && typeof state.picker.redraw === 'function') {
+                state.picker.redraw();
+              }
+            }
           }
           return data;
         })
@@ -585,6 +605,7 @@
     state.selectedTime  = '';
     state.selectedLabel = '';
     state.slotCache     = {};
+    state.unavailableDates = {};
     if (state.picker) {
       state.picker.clear();
       state.picker.destroy();
