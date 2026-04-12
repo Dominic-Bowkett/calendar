@@ -11,4 +11,4 @@
 //   3. Copy the URL and paste it below (replace the empty string)
 // ─────────────────────────────────────────────────────────────────────────────
 
-var APPS_SCRIPT_URL = '';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx461S0IcddKxrK4cRJAoImXVYJJKNK2yFlN36kqHlKVH2Saivx12J3WS3NNOXHqUGw/exec';
