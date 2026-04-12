@@ -10,6 +10,9 @@ body { background: #f3f4f6; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Letter-spacing utility ───────────────────────────────────────────────── */
+.ls-1 { letter-spacing: .05em; }
+
 /* ── Appointment type cards ───────────────────────────────────────────────── */
 .type-card {
   cursor: pointer;
@@ -20,28 +23,72 @@ body { background: #f3f4f6; }
   box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12) !important;
 }
 
-/* ── Time slot buttons ────────────────────────────────────────────────────── */
-.slot-btn {
-  min-width: 90px;
-  font-size: .875rem;
-  transition: all .12s ease;
+/* ── Two-panel layout ─────────────────────────────────────────────────────── */
+.cal-panel   { background: #fafafa; }
+.slots-panel { background: #fff; }
+
+/* ── Flatpickr — inline calendar fills the panel ─────────────────────────── */
+#datepicker { display: none; }
+
+.flatpickr-calendar.inline {
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0;
+  background: transparent;
+  width: 100% !important;
+  max-width: 100%;
 }
-.slot-btn.selected {
+.flatpickr-calendar.inline .flatpickr-rContainer,
+.flatpickr-calendar.inline .flatpickr-innerContainer {
+  width: 100%;
+}
+.flatpickr-calendar.inline .flatpickr-days {
+  width: 100%;
+}
+.flatpickr-calendar.inline .dayContainer {
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+}
+/* Selected day */
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+  background: #0d6efd;
+  border-color: #0d6efd;
+}
+/* Today indicator */
+.flatpickr-day.today:not(.selected) {
+  border-color: #0d6efd;
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+/* ── Time slot buttons (vertical Calendly-style list) ────────────────────── */
+.slot-btn {
+  font-size: .9rem;
+  padding: .55rem 1rem;
+  transition: all .12s ease;
+  text-align: center;
+  border-radius: 6px;
+}
+.slot-btn:hover:not(.selected) {
+  background: #e8f0fe;
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+.slot-btn.selected,
+.slot-btn.selected:hover {
   background: #0d6efd;
   border-color: #0d6efd;
   color: #fff;
 }
 
-/* ── Booking summary bar ──────────────────────────────────────────────────── */
-.booking-summary-bar {
-  border-left: 4px solid #0d6efd !important;
+/* ── Type pill ────────────────────────────────────────────────────────────── */
+.type-pill {
+  display: inline-block;
 }
 
 /* ── Success icon ─────────────────────────────────────────────────────────── */
 .success-icon { font-size: 4rem; }
-
-/* ── Flatpickr ────────────────────────────────────────────────────────────── */
-.flatpickr-input { background: #fff !important; cursor: pointer; }
-
-/* ── Date picker max width ────────────────────────────────────────────────── */
-#datepicker { max-width: 220px; }
