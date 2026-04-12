@@ -1,42 +1,47 @@
-/* Booking App Custom Styles */
+/* ── General ──────────────────────────────────────────────────────────────── */
+body { background: #f3f4f6; }
 
-/* Service cards */
-.service-card {
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+/* ── Step sections ────────────────────────────────────────────────────────── */
+.step-section {
+  animation: fadeUp .2s ease;
 }
-.service-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.12) !important;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Time slot buttons */
+/* ── Appointment type cards ───────────────────────────────────────────────── */
+.type-card {
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.type-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1.2rem rgba(0,0,0,.12) !important;
+}
+
+/* ── Time slot buttons ────────────────────────────────────────────────────── */
 .slot-btn {
-    min-width: 90px;
-    transition: all 0.15s ease;
+  min-width: 90px;
+  font-size: .875rem;
+  transition: all .12s ease;
 }
 .slot-btn.selected {
-    background-color: var(--bs-primary);
-    border-color: var(--bs-primary);
-    color: #fff;
+  background: #0d6efd;
+  border-color: #0d6efd;
+  color: #fff;
 }
 
-/* Flatpickr overrides */
-.flatpickr-input {
-    background-color: #fff !important;
-    cursor: pointer;
+/* ── Booking summary bar ──────────────────────────────────────────────────── */
+.booking-summary-bar {
+  border-left: 4px solid #0d6efd !important;
 }
 
-/* Admin table small text */
-.table td, .table th {
-    vertical-align: middle;
-}
+/* ── Success icon ─────────────────────────────────────────────────────────── */
+.success-icon { font-size: 4rem; }
 
-/* Step card animation */
-#step-details {
-    animation: fadeIn 0.2s ease;
-}
+/* ── Flatpickr ────────────────────────────────────────────────────────────── */
+.flatpickr-input { background: #fff !important; cursor: pointer; }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
+/* ── Date picker max width ────────────────────────────────────────────────── */
+#datepicker { max-width: 220px; }

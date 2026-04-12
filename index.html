@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booking App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="bg-light">
+
+<!-- ── Navbar ────────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-dark bg-primary shadow-sm">
+  <div class="container">
+    <span class="navbar-brand fw-bold"><i class="bi bi-calendar3 me-2"></i><span id="nav-title">Booking App</span></span>
+    <span class="navbar-text text-white-50 small" id="nav-step"></span>
+  </div>
+</nav>
+
+<!-- ── Setup banner (hidden once URL is configured) ──────────────────────── -->
+<div id="setup-banner" class="alert alert-warning alert-dismissible rounded-0 mb-0 border-0 border-bottom d-none">
+  <div class="container d-flex align-items-start gap-2">
+    <i class="bi bi-exclamation-triangle-fill mt-1 flex-shrink-0"></i>
+    <div>
+      <strong>Setup required:</strong> Open <code>assets/js/config.js</code> and paste your Google Apps Script web app URL into <code>APPS_SCRIPT_URL</code>.
+      See the <a href="https://github.com/dominic-bowkett/calender#readme" class="alert-link" target="_blank">README</a> for setup steps.
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ─────────────────────────────────────────────────────────────── -->
+<div class="container py-4" style="max-width:760px">
+
+  <!-- Loading spinner (shown while fetching config) -->
+  <div id="loading-screen" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-3">Loading…</p>
+  </div>
+
+  <!-- Error screen -->
+  <div id="error-screen" class="d-none">
+    <div class="alert alert-danger d-flex gap-2">
+      <i class="bi bi-exclamation-circle-fill fs-5 flex-shrink-0 mt-1"></i>
+      <div>
+        <strong>Failed to load.</strong>
+        <span id="error-message"></span>
+        <br><small class="text-muted">Check that your Apps Script URL is correct and the web app is deployed with "Anyone" access.</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: Select appointment type ──────────────────────────────── -->
+  <div id="step-type" class="step-section d-none">
+    <h5 class="fw-bold mb-1">New Booking</h5>
+    <p class="text-muted mb-4">Select an appointment type to get started.</p>
+    <div id="type-cards" class="row g-3"></div>
+  </div>
+
+  <!-- ── STEP 2: Select date & time ───────────────────────────────────── -->
+  <div id="step-datetime" class="step-section d-none">
+
+    <!-- Selected type summary bar -->
+    <div id="type-summary" class="d-flex align-items-center gap-2 mb-4">
+      <button class="btn btn-sm btn-outline-secondary" onclick="App.goTo('type')">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div class="type-pill fw-semibold small px-3 py-1 rounded-pill text-white" id="type-pill-label"></div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Date picker -->
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Select a Date</label>
+        <input type="text" id="datepicker" class="form-control" placeholder="Choose a date…" readonly autocomplete="off">
+      </div>
+
+      <!-- Time slots -->
+      <div class="col-md-7">
+        <div id="slots-label" class="form-label fw-semibold d-none">Available Times</div>
+
+        <div id="slots-spinner" class="d-none text-center py-3">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted small">Checking availability…</span>
+        </div>
+
+        <div id="slots-empty" class="d-none">
+          <p class="text-muted small mt-2"><i class="bi bi-calendar-x me-1"></i>No available slots on this date. Try another day.</p>
+        </div>
+
+        <div id="slots-grid" class="d-flex flex-wrap gap-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Client details ────────────────────────────────────────── -->
+  <div id="step-details" class="step-section d-none">
+
+    <!-- Booking summary bar -->
+    <div class="booking-summary-bar d-flex align-items-center gap-2 mb-4 p-3 rounded-3 bg-white shadow-sm border">
+      <div class="flex-grow-1">
+        <div class="fw-semibold small" id="summary-type"></div>
+        <div class="text-muted small"><i class="bi bi-calendar3 me-1"></i><span id="summary-datetime"></span></div>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" onclick="App.goTo('datetime')">Change</button>
+    </div>
+
+    <form id="details-form" novalidate>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label">Client Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="f-name" name="clientName" required maxlength="100" autocomplete="off">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Client Email <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" id="f-email" name="clientEmail" required maxlength="150" autocomplete="off">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Phone <span class="text-muted">(optional)</span></label>
+          <input type="tel" class="form-control" id="f-phone" name="clientPhone" maxlength="30" autocomplete="off">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Property Address <span class="text-muted">(optional)</span></label>
+          <input type="text" class="form-control" id="f-address" name="clientAddress" maxlength="200" autocomplete="off" placeholder="For EPC / floor plan jobs">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Notes <span class="text-muted">(optional)</span></label>
+          <textarea class="form-control" id="f-notes" name="notes" rows="2" maxlength="500" placeholder="Any additional details…"></textarea>
+        </div>
+      </div>
+
+      <div id="details-error" class="alert alert-danger mt-3 d-none"></div>
+
+      <div class="d-flex gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" onclick="App.goTo('datetime')">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </button>
+        <button type="submit" class="btn btn-primary flex-grow-1" id="submit-btn">
+          <i class="bi bi-check-lg me-1"></i>Confirm Booking
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── STEP 4: Success ──────────────────────────────────────────────── -->
+  <div id="step-success" class="step-section d-none text-center">
+    <div class="success-icon mb-3"><i class="bi bi-check-circle-fill text-success"></i></div>
+    <h4 class="fw-bold text-success">Booking Confirmed!</h4>
+    <p class="text-muted mb-4">The appointment has been added to your Google Calendar and a confirmation email has been sent to the client.</p>
+
+    <div class="card text-start mb-4 shadow-sm">
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-5 text-muted">Appointment</dt> <dd class="col-7 fw-semibold" id="s-type"></dd>
+          <dt class="col-5 text-muted">Date</dt>         <dd class="col-7" id="s-date"></dd>
+          <dt class="col-5 text-muted">Time</dt>         <dd class="col-7" id="s-time"></dd>
+          <dt class="col-5 text-muted">Duration</dt>     <dd class="col-7" id="s-duration"></dd>
+          <dt class="col-5 text-muted">Client</dt>       <dd class="col-7" id="s-client"></dd>
+          <dt class="col-5 text-muted">Email</dt>        <dd class="col-7" id="s-email"></dd>
+          <dt class="col-5 text-muted d-none" id="s-addr-label">Address</dt> <dd class="col-7 d-none" id="s-addr"></dd>
+        </dl>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="App.reset()">
+      <i class="bi bi-plus-lg me-1"></i>Book Another Appointment
+    </button>
+  </div>
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
