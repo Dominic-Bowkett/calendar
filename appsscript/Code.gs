@@ -17,7 +17,7 @@
 
 var CONFIG = {
 
-  ownerName:    'Your Name',
+  ownerName:    'Dom Bowkett',
   ownerEmail:   '',           // leave blank to use your Google account email
   vatRate:      20,           // UK standard VAT rate (%)
 
@@ -27,11 +27,11 @@ var CONFIG = {
   // Working hours per day. 0=Sun, 1=Mon … 6=Sat. null = closed.
   workingHours: {
     0: null,
-    1: { start: '09:00', end: '17:00' },
-    2: { start: '09:00', end: '17:00' },
-    3: { start: '09:00', end: '17:00' },
-    4: { start: '09:00', end: '17:00' },
-    5: { start: '09:00', end: '17:00' },
+    1: { start: '09:00', end: '14:00' },
+    2: { start: '09:00', end: '14:00' },
+    3: { start: '09:00', end: '14:00' },
+    4: { start: '09:00', end: '14:00' },
+    5: { start: '09:00', end: '14:00' },
     6: null,
   },
 
@@ -49,13 +49,13 @@ var CONFIG = {
       // Keys must match the bedroom options in the booking form.
       // Remove this property from a type to use a fixed defaultPrice only.
       priceByBedrooms: {
-        'Studio': 65.00,
-        '1':      70.00,
-        '2':      75.00,
-        '3':      85.00,
-        '4':      95.00,
-        '5':     110.00,
-        '6+':    130.00,
+        'Studio':  65.00,
+        '1':       75.00,
+        '2':      100.00,
+        '3':      125.00,
+        '4':      135.00,
+        '5':      145.00,
+        '6+':     150.00,
       },
       color:        '#1a73e8',
       calColor:     'BLUE',
@@ -138,10 +138,35 @@ var CONFIG = {
         </table>
 
         <p style="margin-top:24px;color:#555;font-size:14px">
-          If you need to reschedule or cancel, please get in touch as soon as possible.
+          Thanks for booking an assessment for an Energy Performance Certificate assessment. I'm an accredited Domestic Energy Assessor, fully insured through ECMK (License No. 11235441) and Elmhurst Energy (License No: CN16-0001). I'm also a Trustmark Government Endorsed Quality Tradesperson (License No: 3310811).
         </p>
+
+        <p style="color:#555;font-size:14px">
+          Please allow up to 1 hour for the property visit however it may take more or less than this. After the visit I will need further time to complete the calculations and input all details into the software. I will then lodge the certificate on the Government EPC register when all is ready, sending you a link to the certificate.
+        </p>
+
+        <p style="color:#555;font-size:14px">
+          Please kindly ensure I can access all rooms/areas. I will need to measure the property, all windows, see all light bulbs, radiators etc and also will need access to your heating system, gas/electric meters and loft - where applicable. I will need to take photographic evidence of specific items for evidence requirements. These are stored safely and securely, and only shared with the accreditation scheme.
+        </p>
+
+        <p style="color:#555;font-size:14px">
+          Energy Performance Certificate scores may differ now compared to previous assessments due to a combination of updated methodologies, tighter regulations, and a shift in focus from purely cost-based to carbon-based efficiency. Assessments are now more rigorous, reducing reliance on assumptions and focusing more on provided evidence. If you have completed any upgrades to your building then please have any paperwork ready for me on arrival and we can chat through these documents.
+        </p>
+
+        <p style="color:#555;font-size:14px">
+          <strong>Complaints Policy:</strong> Should you wish to raise a question or complaint regarding the service or the EPC, then you can contact me directly by email: <a href="mailto:info@dominicbowkett.com">info@dominicbowkett.com</a>. If I am unable to resolve your complaint directly then you can contact the accreditation scheme detailed on the EPC.
+        </p>
+
+        <p style="margin-top:24px;color:#555;font-size:14px">
+          If you need to reschedule or cancel, please get in touch as soon as possible by email or on 07973713747.
+        </p>
+
         <p style="color:#555;font-size:14px">
           Kind regards,<br><strong>{ownerName}</strong>
+        </p>
+
+        <p style="margin-top:24px;color:#888;font-size:12px;border-top:1px solid #f0f0f0;padding-top:16px">
+          EMS-2 Ltd trading as Dominic Bowkett/Ecoweald, 128 City Road, London, England, EC1V 2NX. Company number 11235441. ICO No: ZB664140.
         </p>
       </div>
     </div>
