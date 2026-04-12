@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Booking App — Preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    body { background: #f3f4f6; }
+    .step-section { animation: fadeUp .2s ease; }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .ls-1 { letter-spacing:.05em; }
+    .type-card { cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; }
+    .type-card:hover { transform:translateY(-3px); box-shadow:0 .5rem 1.2rem rgba(0,0,0,.12)!important; }
+    .cal-panel   { background:#fafafa; }
+    .slots-panel { background:#fff; }
+    #datepicker { display:none; }
+    .flatpickr-calendar.inline {
+      box-shadow:none!important; border:none!important;
+      border-radius:0; background:transparent;
+      width:100%!important; max-width:100%;
+    }
+    .flatpickr-calendar.inline .flatpickr-rContainer,
+    .flatpickr-calendar.inline .flatpickr-innerContainer { width:100%; }
+    .flatpickr-calendar.inline .flatpickr-days { width:100%; }
+    .flatpickr-calendar.inline .dayContainer {
+      width:100%; min-width:100%; max-width:100%; justify-content:flex-start;
+    }
+    .flatpickr-day.selected,.flatpickr-day.selected:hover,.flatpickr-day.selected:focus {
+      background:#0d6efd; border-color:#0d6efd;
+    }
+    .flatpickr-day.today:not(.selected) { border-color:#0d6efd; color:#0d6efd; font-weight:600; }
+    .slot-btn { font-size:.9rem; padding:.55rem 1rem; transition:all .12s ease; text-align:center; border-radius:6px; }
+    .slot-btn:hover:not(.selected) { background:#e8f0fe; border-color:#0d6efd; color:#0d6efd; }
+    .slot-btn.selected,.slot-btn.selected:hover { background:#0d6efd; border-color:#0d6efd; color:#fff; }
+    .type-pill { display:inline-block; }
+    .success-icon { font-size:4rem; }
+    /* Preview banner */
+    .preview-banner {
+      background:#6f42c1; color:#fff; text-align:center;
+      padding:.4rem 1rem; font-size:.8rem; letter-spacing:.03em;
+    }
+    .preview-banner a { color:#e0c9ff; }
+  </style>
+</head>
+<body>
+
+<div class="preview-banner">
+  <i class="bi bi-eye me-1"></i>
+  <strong>PREVIEW MODE</strong> — mock data, no backend needed.
+  Use the step buttons below to jump between screens.
+  <span class="ms-3">
+    <button class="btn btn-sm btn-outline-light py-0 px-2 me-1" onclick="showStep('type')">Step 1</button>
+    <button class="btn btn-sm btn-outline-light py-0 px-2 me-1" onclick="showStep('datetime')">Step 2</button>
+    <button class="btn btn-sm btn-outline-light py-0 px-2 me-1" onclick="showStep('details')">Step 3</button>
+    <button class="btn btn-sm btn-outline-light py-0 px-2" onclick="showStep('success')">Step 4</button>
+  </span>
+</div>
+
+<!-- ════ STEP 1 — Choose appointment type ════ -->
+<div id="step-type" class="step-section">
+  <div class="container py-5" style="max-width:820px">
+    <div class="mb-4">
+      <h4 class="fw-bold mb-1" id="owner-heading">Dominic Bowkett — Book an Appointment</h4>
+      <p class="text-muted mb-0">Select a service to get started.</p>
+    </div>
+    <div id="type-cards" class="row g-3"></div>
+  </div>
+</div>
+
+<!-- ════ STEP 2 — Pick date & time ════ -->
+<div id="step-datetime" class="d-none">
+  <div class="container py-4 py-md-5" style="max-width:860px">
+    <div class="d-flex align-items-center gap-2 mb-4">
+      <button class="btn btn-sm btn-outline-secondary" onclick="showStep('type')">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div class="type-pill text-white fw-semibold small px-3 py-1 rounded-pill"
+           id="type-pill" style="background:#1a73e8">EPC Assessment</div>
+      <span class="text-muted small" id="type-duration-label">60 min</span>
+    </div>
+    <div class="card shadow-sm border-0 overflow-hidden">
+      <div class="row g-0" style="min-height:420px">
+        <div class="col-md-5 border-end cal-panel p-4">
+          <p class="fw-semibold small text-muted text-uppercase ls-1 mb-3">Select a Date</p>
+          <input id="datepicker" style="display:none">
+        </div>
+        <div class="col-md-7 slots-panel p-4 d-flex flex-column">
+          <div id="slots-placeholder" class="d-none text-muted text-center m-auto small">
+            <i class="bi bi-calendar2 d-block mb-2" style="font-size:2rem;opacity:.3"></i>
+            Select a date to see available times
+          </div>
+          <div id="slots-content" class="h-100 d-flex flex-column">
+            <p class="fw-semibold small text-muted text-uppercase ls-1 mb-3" id="slots-date-heading">
+              Monday, 14 April 2026
+            </p>
+            <div id="slots-list" class="overflow-auto flex-grow-1 pe-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ STEP 3 — Client details ════ -->
+<div id="step-details" class="d-none">
+  <div class="container py-4 py-md-5" style="max-width:640px">
+    <div class="d-flex align-items-center gap-2 mb-4">
+      <button class="btn btn-sm btn-outline-secondary" onclick="showStep('datetime')">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+      <div>
+        <div class="fw-semibold" id="det-type-name">EPC Assessment</div>
+        <div class="text-muted small">
+          <i class="bi bi-calendar3 me-1"></i>
+          <span id="det-datetime">Monday, 14 April 2026 at 10:00 am</span>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-4">Client Details</h6>
+        <form novalidate>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" value="John Smith">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small fw-semibold">Email Address <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" value="john.smith@example.com">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small fw-semibold">Telephone <span class="text-danger">*</span></label>
+              <input type="tel" class="form-control" value="07700 900123">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small fw-semibold">Number of Bedrooms</label>
+              <select class="form-select" id="f-bedrooms-preview">
+                <option value="">— select —</option>
+                <option>Studio</option>
+                <option>1</option>
+                <option>2</option>
+                <option selected>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6+</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Property Address <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" value="12 High Street, London, SW1A 1AA">
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small fw-semibold">
+                Price (inc VAT) <span class="text-danger">*</span>
+                <span class="fw-normal text-muted" id="price-auto-label-p">(auto — edit to override)</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">£</span>
+                <input type="number" class="form-control" id="f-price-preview" value="85.00">
+              </div>
+              <div class="form-text" id="price-vat-hint-preview">3 bed  ·  Ex VAT: £70.83  ·  VAT (20%): £14.17</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Notes <span class="text-muted fw-normal">(optional)</span></label>
+              <textarea class="form-control" rows="2" placeholder="Any additional details…"></textarea>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" onclick="showStep('datetime')">
+              <i class="bi bi-arrow-left me-1"></i>Back
+            </button>
+            <button type="button" class="btn btn-primary flex-grow-1 fw-semibold" onclick="showStep('success')">
+              <i class="bi bi-check-lg me-1"></i>Confirm Booking
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ STEP 4 — Success ════ -->
+<div id="step-success" class="d-none">
+  <div class="container py-5 text-center" style="max-width:540px">
+    <div class="success-icon mb-3"><i class="bi bi-check-circle-fill text-success"></i></div>
+    <h4 class="fw-bold text-success mb-1">Booking Confirmed!</h4>
+    <p class="text-muted mb-4">Added to Google Calendar · Confirmation email sent to client</p>
+    <div class="card border-0 shadow-sm text-start mb-4">
+      <div class="card-body p-4">
+        <dl class="row mb-0 small">
+          <dt class="col-5 text-muted">Ref</dt>           <dd class="col-7 fw-semibold font-monospace">BK-20260414-1000</dd>
+          <dt class="col-5 text-muted">Appointment</dt>   <dd class="col-7 fw-semibold">EPC Assessment</dd>
+          <dt class="col-5 text-muted">Date &amp; Time</dt>   <dd class="col-7">Monday, 14 April 2026 at 10:00 am</dd>
+          <dt class="col-5 text-muted">Client</dt>        <dd class="col-7">John Smith</dd>
+          <dt class="col-5 text-muted">Email</dt>         <dd class="col-7">john.smith@example.com</dd>
+          <dt class="col-5 text-muted">Phone</dt>         <dd class="col-7">07700 900123</dd>
+          <dt class="col-5 text-muted">Address</dt>       <dd class="col-7">12 High Street, London, SW1A 1AA</dd>
+          <dt class="col-5 text-muted">Bedrooms</dt>      <dd class="col-7">3</dd>
+          <dt class="col-5 text-muted">Price (inc VAT)</dt> <dd class="col-7 fw-semibold">£85.00</dd>
+        </dl>
+      </div>
+    </div>
+    <button class="btn btn-primary px-4" onclick="showStep('type')">
+      <i class="bi bi-plus-lg me-1"></i>Book Another Appointment
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+// ── Mock config ──────────────────────────────────────────────────────────────
+var MOCK_CONFIG = {
+  ownerName: 'Dominic Bowkett',
+  vatRate: 20,
+  slotIncrement: 15,
+  workingHours: {
+    0: null,
+    1: { start:'09:00', end:'17:00' },
+    2: { start:'09:00', end:'17:00' },
+    3: { start:'09:00', end:'17:00' },
+    4: { start:'09:00', end:'17:00' },
+    5: { start:'09:00', end:'17:00' },
+    6: null,
+  },
+  appointmentTypes: [
+    { id:'epc', name:'EPC Assessment', duration:60, defaultPrice:75.00,
+      priceByBedrooms:{'Studio':65,'1':70,'2':75,'3':85,'4':95,'5':110,'6+':130},
+      color:'#1a73e8', description:'Energy Performance Certificate assessment' },
+    { id:'floorplan', name:'Floor Plan', duration:90, defaultPrice:85.00,
+      color:'#188038', description:'Property floor plan measurement and drawing' },
+    { id:'epc_floorplan', name:'EPC + Floor Plan', duration:120, defaultPrice:140.00,
+      color:'#6200ea', description:'Combined EPC assessment and floor plan' },
+    { id:'consultation', name:'Consultation', duration:30, defaultPrice:0.00,
+      color:'#e37400', description:'General consultation' },
+  ],
+};
+
+// ── Mock time slots (9am–5pm in 15-min increments, minus a few "busy") ───────
+var MOCK_SLOTS = (function () {
+  var slots = [];
+  var busy = ['09:00','09:15','10:45','11:00','13:00','13:15','13:30','13:45','15:00'];
+  for (var h = 9; h < 17; h++) {
+    for (var m = 0; m < 60; m += 15) {
+      var hh = String(h).padStart(2,'0');
+      var mm = String(m).padStart(2,'0');
+      var time = hh + ':' + mm;
+      if (busy.indexOf(time) === -1) {
+        var ampm = h < 12 ? 'am' : 'pm';
+        var h12  = h <= 12 ? h : h - 12;
+        slots.push({ time: time, label: h12 + ':' + mm + ' ' + ampm });
+      }
+    }
+  }
+  return slots;
+})();
+
+// ── Render type cards ────────────────────────────────────────────────────────
+(function renderTypeCards() {
+  var container = document.getElementById('type-cards');
+  MOCK_CONFIG.appointmentTypes.forEach(function (type) {
+    var col = document.createElement('div');
+    col.className = 'col-sm-6';
+    var priceHtml = type.defaultPrice > 0
+      ? '<span class="fw-semibold">from £' + type.defaultPrice.toFixed(2) + '</span>'
+      : '<span class="badge bg-secondary fw-normal">Free</span>';
+    col.innerHTML =
+      '<div class="card h-100 type-card shadow-sm border-0">' +
+        '<div class="card-header border-0 text-white fw-semibold" style="background:' + type.color + '">' +
+          type.name +
+        '</div>' +
+        '<div class="card-body d-flex flex-column">' +
+          (type.description ? '<p class="card-text text-muted small mb-3">' + type.description + '</p>' : '') +
+          '<div class="mt-auto d-flex justify-content-between align-items-center">' +
+            '<span class="text-muted small"><i class="bi bi-clock me-1"></i>' + type.duration + ' min</span>' +
+            priceHtml +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    col.querySelector('.type-card').addEventListener('click', function () {
+      document.getElementById('type-pill').textContent      = type.name;
+      document.getElementById('type-pill').style.background = type.color;
+      document.getElementById('type-duration-label').textContent = type.duration + ' min';
+      document.getElementById('det-type-name').textContent  = type.name;
+      showStep('datetime');
+    });
+    container.appendChild(col);
+  });
+})();
+
+// ── Init inline Flatpickr ────────────────────────────────────────────────────
+var picker = flatpickr('#datepicker', {
+  inline: true,
+  minDate: 'today',
+  maxDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+  disable: [function (d) { return d.getDay() === 0 || d.getDay() === 6; }],
+  onChange: function (dates, dateStr) {
+    var parts = dateStr.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    var label = d.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('slots-date-heading').textContent = label;
+    document.getElementById('det-datetime').textContent = label + ' at 10:00 am';
+    renderSlots();
+  },
+});
+
+// ── Render mock slots ────────────────────────────────────────────────────────
+function renderSlots() {
+  var list = document.getElementById('slots-list');
+  list.innerHTML = '';
+  MOCK_SLOTS.forEach(function (slot) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-primary slot-btn w-100 mb-2';
+    btn.textContent = slot.label;
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.slot-btn').forEach(function (b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      var heading = document.getElementById('slots-date-heading').textContent;
+      document.getElementById('det-datetime').textContent = heading + ' at ' + slot.label;
+      setTimeout(function () { showStep('details'); }, 180);
+    });
+    list.appendChild(btn);
+  });
+  document.getElementById('slots-placeholder') && (document.getElementById('slots-placeholder').classList.add('d-none'));
+  document.getElementById('slots-content').classList.remove('d-none');
+}
+
+// ── Bedroom price auto-fill (preview) ────────────────────────────────────────
+document.getElementById('f-bedrooms-preview').addEventListener('change', function () {
+  var map = {'Studio':65,'1':70,'2':75,'3':85,'4':95,'5':110,'6+':130};
+  var priceEl = document.getElementById('f-price-preview');
+  var hintEl  = document.getElementById('price-vat-hint-preview');
+  var lbl     = document.getElementById('price-auto-label-p');
+  var bed     = this.value;
+  if (bed && map[bed] !== undefined) {
+    var p = map[bed];
+    priceEl.value = p.toFixed(2);
+    lbl.textContent = '(auto — edit to override)';
+    var ex = p / 1.2, vat = p - ex;
+    hintEl.textContent = bed + ' bed  ·  Ex VAT: £' + ex.toFixed(2) + '  ·  VAT (20%): £' + vat.toFixed(2);
+  } else {
+    priceEl.value = '75.00';
+    lbl.textContent = '';
+    hintEl.textContent = 'Ex VAT: £62.50  ·  VAT (20%): £12.50';
+  }
+});
+document.getElementById('f-price-preview').addEventListener('input', function () {
+  document.getElementById('price-auto-label-p').textContent = '';
+  var v = parseFloat(this.value) || 0;
+  if (v > 0) {
+    var ex = v / 1.2, vat = v - ex;
+    document.getElementById('price-vat-hint-preview').textContent =
+      'Ex VAT: £' + ex.toFixed(2) + '  ·  VAT (20%): £' + vat.toFixed(2);
+  } else {
+    document.getElementById('price-vat-hint-preview').textContent = '';
+  }
+});
+
+// ── Step navigation ──────────────────────────────────────────────────────────
+function showStep(step) {
+  ['type','datetime','details','success'].forEach(function (s) {
+    var el = document.getElementById('step-' + s);
+    if (el) el.classList.add('d-none');
+  });
+  var target = document.getElementById('step-' + step);
+  if (target) { target.classList.remove('d-none'); target.classList.add('step-section'); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

@@ -421,12 +421,32 @@ function sendConfirmationEmail(data, type, startDt, ref, priceIncVAT) {
   MailApp.sendEmail({ to: data.clientEmail, subject: subject, htmlBody: body, replyTo: fromEmail });
 }
 
-// ── 24-hour reminder (enable via a daily time-driven trigger) ─────────────────
-// To activate:
-//  1. In Apps Script editor click the clock icon (Triggers)
-//  2. Add trigger → Function: sendReminders → Event source: Time-driven
-//     → Day timer → choose a time (e.g. 8am–9am)
-//  The function runs once per day and emails clients whose appointment is tomorrow.
+// ── One-time setup: programmatically create the daily reminder trigger ────────
+// Run this function ONCE from the Apps Script editor after deploying:
+//   Run → Run function → createDailyReminderTrigger
+// It sets up a daily 8 am trigger so sendReminders() fires automatically.
+// Safe to re-run — it removes any existing sendReminders trigger first.
+
+function createDailyReminderTrigger() {
+  // Remove existing triggers to avoid duplicates
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === 'sendReminders') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  // Create a new daily trigger at 8 am (script timezone)
+  ScriptApp.newTrigger('sendReminders')
+    .timeBased()
+    .everyDays(1)
+    .atHour(8)
+    .create();
+  Logger.log('✓ Daily reminder trigger created — sendReminders will run at 8 am each day.');
+}
+
+// ── 24-hour reminder ──────────────────────────────────────────────────────────
+// Activated by createDailyReminderTrigger() above.
+// Finds all Google Calendar events tomorrow that have a clientEmail tag
+// (i.e. were created by this booking app) and emails each client a reminder.
 
 function sendReminders() {
   var tz       = Session.getScriptTimeZone();
