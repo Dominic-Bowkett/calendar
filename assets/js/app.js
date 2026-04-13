@@ -172,6 +172,10 @@
   }
 
   function onDateSelected(dateStr) {
+    // Bail out if we're being called mid-teardown (clear() during reset)
+    // or the user cleared their date — nothing useful to render.
+    if (!dateStr || !state.selectedType) return;
+
     hide('slots-placeholder');
     show('slots-content');
     document.getElementById('slots-date-heading').textContent = formatDate(dateStr);
@@ -607,7 +611,9 @@
     state.slotCache     = {};
     state.unavailableDates = {};
     if (state.picker) {
-      state.picker.clear();
+      // Pass false so clear() doesn't fire onChange → onDateSelected(),
+      // which would crash reading state.selectedType.id after we've nulled it.
+      state.picker.clear(false);
       state.picker.destroy();
       state.picker = null;
     }
